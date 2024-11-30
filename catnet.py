@@ -216,66 +216,6 @@ def train_and_test_score(model: nn.Module, scaler: MinMaxScaler, train_data: tor
 
     return train_score, test_score
 
-def plot_predictions(model: nn.Module, scaler: MinMaxScaler, train_data: torch.Tensor,
-                      train_label: torch.Tensor, test_data: torch.Tensor, test_label: torch.Tensor,
-                      train_dates: pd.DatetimeIndex, test_dates: pd.DatetimeIndex, sample_days: int, stock_code: str):
-    """
-    Function to plot the predictions of the model.
-    Args:
-        model : torch.nn.Module
-            trained model
-        scaler : MinMaxScaler
-            scaler used to normalize the data
-        train_data : torch.Tensor
-            training data
-        train_label : torch.Tensor
-            training labels
-        test_data : torch.Tensor
-            test data
-        test_label : torch.Tensor
-            test labels
-        train_dates : pd.DatetimeIndex
-            training dates
-        test_dates : pd.DatetimeIndex
-            test dates
-        sample_days : int
-            number of days for training data to plot
-        stock_code : str
-            stock code
-    Returns:
-        None
-    """
-
-    train_label_pred = model(train_data)
-    test_label_pred = model(test_data)
-    train_label_inv = scaler.inverse_transform(train_label.detach().numpy().reshape(-1, 1))
-    test_label_inv = scaler.inverse_transform(test_label.detach().numpy().reshape(-1, 1))
-    train_label_pred_inv = scaler.inverse_transform(train_label_pred.detach().numpy())
-    test_label_pred_inv = scaler.inverse_transform(test_label_pred.detach().numpy())
-
-    train_actual_color = 'cornflowerblue'
-    train_pred_color = 'lightblue'
-    test_actual_color = 'salmon'
-    test_pred_color = 'lightcoral'
-
-    plt.figure(figsize=(18,6))
-    plt.plot(train_dates[-sample_days:], train_label_inv[-sample_days:], label="Training Data", color=train_actual_color)
-    plt.plot(train_dates[-sample_days:], train_label_pred_inv[-sample_days:], label="Training Predictions", linewidth=1, color=train_pred_color)
-
-    plt.plot(test_dates, test_label_inv, label="Test Data", color=test_actual_color)
-    plt.plot(test_dates, test_label_pred_inv, label="Test Predictions", linewidth=1, color=test_pred_color)
-
-    plt.title(f"Stock Price Prediction for {stock_code} using LSTM")
-    plt.xlabel("Time")
-    plt.ylabel("Stock Price (USD)")
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.grid(color="lightgray")
-
-    plt.show()
-
 
 """
 Inputs: 
@@ -315,80 +255,6 @@ def CatNet(model: nn.Module, optimizer:optim.Optimizer, data:pd.DataFrame, y, q,
     data_train = load_data_X(data, lookback)
     data_train = torch.from_numpy(data_train).type(torch.Tensor).to(device)
     original_shap_values = calc_shap_values(model, data_train, features)
-
-
-
-    plot_path = "/Users/hanjiaan/Documents/GitHub/CatNet/plots"
-    if not os.path.exists(plot_path):
-        os.makedirs(plot_path)
-    else:
-        for file in os.listdir(plot_path):
-            os.remove(os.path.join(plot_path, file))
-
-    def plot_shap_values(Xplus_shap, Xminus_shap, X_shap, feature_name, mirrored_data):
-        feature_plus_shap_values = Xplus_shap
-
-        '''
-        plt.figure(figsize=(18,6))
-        plt.plot(data_index[lookback:,], feature_plus_shap_values, label=f"{feature_name}_plus", color='cornflowerblue')
-        plt.title(f"{feature_name}_plus SHAP Values in time series (t)")
-        plt.xlabel("Time")
-        plt.ylabel("SHAP Value")
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-        plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-        plt.xticks(rotation=45)
-        #plt.legend()
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_plus.png"
-        plt.savefig(save_path)
-        '''
-
-
-        feature_minus_shap_values = Xminus_shap
-        '''
-        plt.figure(figsize=(18,6))
-        plt.plot(data_index[lookback:,], feature_minus_shap_values, label=f"{feature_name}_minus", color='salmon')
-        plt.title(f"{feature_name}_minus SHAP Values in time series(t)")
-        plt.xlabel("Time")
-        plt.ylabel("SHAP Value")
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-        plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-        plt.xticks(rotation=45)
-        #plt.legend()
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_minus.png"
-        plt.savefig(save_path)
-        '''
-
-        plt.figure(figsize=(18,6))
-        plt.scatter(mirrored_data[f"{feature}_plus"].values[lookback:], feature_plus_shap_values, label=f"{feature_name}_plus", color='cornflowerblue')
-        plt.title(f"{feature_name}_plus SHAP Values vs {feature_name}_plus Value (x)")
-        plt.xlabel(f"{feature_name} Value")
-        plt.ylabel("SHAP Value")
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_plus_scatter.png"
-        plt.savefig(save_path)
-
-        plt.figure(figsize=(18,6))
-        plt.scatter(mirrored_data[f"{feature}_minus"].values[lookback:], feature_minus_shap_values, label=f"{feature_name}_minus", color='salmon')
-        plt.title(f"{feature_name}_minus SHAP Values vs {feature_name}_minus Value (x)")
-        plt.xlabel(f"{feature_name} Value")
-        plt.ylabel("SHAP Value")
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_minus_scatter.png"
-        
-        plt.savefig(save_path)
-
-        feature_original_shap_values = X_shap
-
-        plt.figure(figsize=(18,6))
-        plt.scatter(data[f"{feature_name}"].values[lookback:], feature_original_shap_values, label=f"{feature_name}", color='lightcoral')
-        plt.title(f"{feature_name} original SHAP Values vs {feature_name} Value (x)")
-        plt.xlabel(f"{feature_name} Value")
-        plt.ylabel("SHAP Value")
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_scatter.png"
-        plt.savefig(save_path)
 
 
     #Generate the mirrored data
@@ -588,50 +454,6 @@ def S_CatNet(model: nn.Module, optimizer:optim.Optimizer, data:pd.DataFrame, y, 
     train_lstm(new_model, mirrored_data_train, y_train, 100, criterion, new_optimizer)
 
     shap_values = calc_shap_values(new_model, mirrored_data_train, new_features)
-
-    '''
-    plot_path = "/Users/hanjiaan/Documents/GitHub/CatNet/plots"
-    if not os.path.exists(plot_path):
-        os.makedirs(plot_path)
-    else:
-        for file in os.listdir(plot_path):
-            os.remove(os.path.join(plot_path, file))
-
-    def plot_shap_values(Xplus_shap, Xminus_shap, X_shap, feature_name, mirrored_data):
-        
-        feature_plus_shap_values = Xplus_shap
-        feature_minus_shap_values = Xminus_shap
-
-        plt.figure(figsize=(18,6))
-        plt.scatter(mirrored_data[f"{feature}_plus"].values[lookback:], feature_plus_shap_values, label=f"{feature_name}_plus", color='cornflowerblue')
-        plt.title(f"{feature_name}_plus SHAP Values vs {feature_name}_plus Value (x)")
-        plt.xlabel(f"{feature_name} Value")
-        plt.ylabel("SHAP Value")
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_plus_scatter.png"
-        plt.savefig(save_path)
-
-        plt.figure(figsize=(18,6))
-        plt.scatter(mirrored_data[f"{feature}_minus"].values[lookback:], feature_minus_shap_values, label=f"{feature_name}_minus", color='salmon')
-        plt.title(f"{feature_name}_minus SHAP Values vs {feature_name}_minus Value (x)")
-        plt.xlabel(f"{feature_name} Value")
-        plt.ylabel("SHAP Value")
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_minus_scatter.png"
-        
-        plt.savefig(save_path)
-
-        feature_original_shap_values = X_shap
-
-        plt.figure(figsize=(18,6))
-        plt.scatter(data[f"{feature_name}"].values[lookback:], feature_original_shap_values, label=f"{feature_name}", color='lightcoral')
-        plt.title(f"{feature_name} original SHAP Values vs {feature_name} Value (x)")
-        plt.xlabel(f"{feature_name} Value")
-        plt.ylabel("SHAP Value")
-        plt.grid(color="lightgray")
-        save_path = f"plots/shap_values_{feature_name}_scatter.png"
-        plt.savefig(save_path)
-    '''
 
     for j in range(p):
         Xplus_shap = shap_values[f"{features[j]}_plus"]
