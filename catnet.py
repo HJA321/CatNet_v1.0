@@ -15,7 +15,7 @@ from src.model_training.train import train_lstm
 from src.model_training.hyperparameter_tuning import hyperparameter_optimize, find_optimal_params
 from src.factors.factor_processing import set_first_column_as_index
 from src.FDR.shap_values import calc_shap_values
-from FDR.kernel_dependence import *
+from src.FDR.kernel_dependence import *
 
 # Load the data
 def load_data(stock_code: str) -> pd.DataFrame:
